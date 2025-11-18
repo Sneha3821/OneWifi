@@ -2164,9 +2164,12 @@ void process_wpa3_rfc(bool type)
                 continue;
             }
 
-            if ((radio_params->band == WIFI_FREQUENCY_2_4_BAND) ||  (radio_params->band == WIFI_FREQUENCY_5_BAND) ||
-                (radio_params->band == WIFI_FREQUENCY_5L_BAND) || (radio_params->band == WIFI_FREQUENCY_5H_BAND)) {
-                vapInfo->u.bss_info.security.mode = wifi_security_mode_wpa2_personal;
+            if ((radio_params->band == WIFI_FREQUENCY_2_4_BAND) ||(radio_params->band == WIFI_FREQUENCY_5_BAND)) {
+                vapInfo->u.bss_info.security.mode = wifi_security_mode_wpa3_transition;
+                vapInfo->u.bss_info.security.wpa3_transition_disable = false;
+                vapInfo->u.bss_info.security.mfp = wifi_mfp_cfg_optional;
+                vapInfo->u.bss_info.security.u.key.type = wifi_security_key_type_psk_sae;
+                wifi_util_error_print(WIFI_DB,"%s:%d: Sneha setting security mode :wpa3-pt \n",__func__, __LINE__);
             }
         }
 
