@@ -3502,7 +3502,7 @@ void process_rsn_override_rfc(bool type)
         if (ret != RETURN_OK) {
             wifi_util_error_print(WIFI_CTRL,"%s:%d: Private vaps service update_fn failed \n",__func__, __LINE__);
         } else {
-            wwifi_util_error_print(WIFI_DB,"%s:%d:Sneha Updating security mode for apIndex %d secmode %d \n",__func__, __LINE__,apIndex,vapInfo->u.bss_info.security.mode);
+            wifi_util_error_print(WIFI_DB,"%s:%d:Sneha Updating security mode for apIndex %d secmode %d \n",__func__, __LINE__,apIndex,vapInfo->u.bss_info.security.mode);
         }
     }
 }
