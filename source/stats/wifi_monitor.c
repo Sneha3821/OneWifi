@@ -2964,7 +2964,7 @@ int vapstatus_callback(int apIndex, wifi_vapstatus_t status)
     sta_data_t *sta          = NULL;
     sta_key_t  sta_key;
 
-    wifi_util_dbg_print(WIFI_MON,"%s called for %d and status %d \n",__func__, apIndex, status);
+    wifi_util_dbg_print(WIFI_MON,"%sSneha Sneha called for %d and status %d \n",__func__, apIndex, status);
     g_monitor_module.bssid_data[apIndex].ap_params.ap_status = status;
 
     if (status != wifi_vapstatus_down) {
@@ -2975,18 +2975,26 @@ int vapstatus_callback(int apIndex, wifi_vapstatus_t status)
 
     sta_map = g_monitor_module.bssid_data[apIndex].sta_map;
     if (sta_map == NULL) {
-        wifi_util_dbg_print(WIFI_MON, "%s:%d sta_map is NULL for apIndex %d\n", __func__, __LINE__, apIndex);
+        wifi_util_dbg_print(WIFI_MON, "%s:%d Sneha sta_map is NULL for apIndex %d\n", __func__, __LINE__, apIndex);
         pthread_mutex_unlock(&g_monitor_module.data_lock);
         return 0;
     }
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha [VAP-DOWN] apIndex=%d sta_map=%p thread=%lu\n", __func__, __LINE__,
+        apIndex, sta_map, pthread_self());
 
     temp_sta_map = hash_map_clone(sta_map, sizeof(sta_data_t));
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha [CLONE-DONE] original=%p clone=%p thread=%lu\n", __func__, __LINE__,
+        sta_map, temp_sta_map, pthread_self());
     if (temp_sta_map == NULL) {
-        wifi_util_dbg_print(WIFI_MON, "%s:%d Failed to clone hash map\n", __func__, __LINE__);
+        wifi_util_dbg_print(WIFI_MON, "%s:%d Sneha Failed to clone hash map\n", __func__, __LINE__);
         pthread_mutex_unlock(&g_monitor_module.data_lock);
         return -1;
     }
-
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha [ORIG-CLEANUP] sta_map=%p thread=%lu\n",
+        __func__, __LINE__, sta_map, pthread_self());
     hash_map_cleanup(sta_map);
 
     pthread_mutex_unlock(&g_monitor_module.data_lock);
@@ -2996,9 +3004,12 @@ int vapstatus_callback(int apIndex, wifi_vapstatus_t status)
         while (sta != NULL) {
             to_sta_key(sta->sta_mac, sta_key);
             send_wifi_disconnect_event_to_ctrl(sta->sta_mac, apIndex);
-            wifi_util_info_print(WIFI_MON, "%s:%d ClientMac:%s disconnected from ap:%d\n", __func__, __LINE__, sta_key, apIndex);
+            wifi_util_info_print(WIFI_MON, "%s:%d Sneha ClientMac:%s disconnected from ap:%d\n", __func__, __LINE__, sta_key, apIndex);
             sta = hash_map_get_next(temp_sta_map, sta);
         }
+        wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha [CLONE-DESTROY] temp_sta_map=%p thread=%lu\n",
+            __func__, __LINE__, temp_sta_map, pthread_self());
         hash_map_destroy(temp_sta_map);
     }
 

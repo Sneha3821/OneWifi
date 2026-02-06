@@ -356,7 +356,13 @@ void  hash_map_cleanup(hash_map_t *map)
 {
     hash_element_t *he;
     element_t    *e, *tmp;
-    
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha map=%p queue=%p head=%p thread=%lu\n",
+        __func__, __LINE__,
+        map,
+        map ? map->queue : NULL,
+        (map && map->queue) ? map->queue->head : NULL,
+        pthread_self());
     if (map == NULL || map->queue == NULL || map->queue->head == NULL) {
         return;
     }
@@ -364,30 +370,66 @@ void  hash_map_cleanup(hash_map_t *map)
     while (e != NULL) {
         tmp = e->next;
         he = (hash_element_t *) e->data;
-        if(he != NULL) {
+
+     wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha e=%p he=%p key=%p data=%p thread=%lu\n",
+            __func__, __LINE__,
+            e,
+            he,
+            he ? he->key : NULL,
+            he ? he->data : NULL,
+            pthread_self());
+
+        if (he != NULL) {
             if (he->data != NULL) {
+                wifi_util_dbg_print(WIFI_MON,
+                    "%s %d Sneha FREE he->data=%p\n", __func__, __LINE__, he->data);
                 free(he->data);
             }
             if (he->key != NULL) {
+                wifi_util_dbg_print(WIFI_MON,
+                    "%s %d Sneha FREE he->key=%p\n", __func__, __LINE__, he->key);
                 free(he->key);
             }
+            wifi_util_dbg_print(WIFI_MON,
+                "%s %d Sneha FREE he=%p\n", __func__, __LINE__, he);
             free(he);
         }
+
+        wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha FREE element=%p\n", __func__, __LINE__, e);
         free(e);
+
         e = tmp;
     }
+
     map->queue->head = NULL;
     map->queue->count = 0;
-    return;
-}
 
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha map=%p completed thread=%lu\n",
+        __func__, __LINE__,
+        map, pthread_self());
+}
 void  hash_map_destroy    (hash_map_t *map)
 {
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha hash_map_destroy map=%p queue=%p thread=%lu\n",
+        __func__, __LINE__,
+        map,
+        map ? map->queue : NULL,
+        pthread_self());
+
     if (map != NULL) {
         hash_map_cleanup(map);
         queue_destroy(map->queue);
         free(map);
     }
+
+    wifi_util_dbg_print(WIFI_MON,
+        "   %s %d Sneha hash_map_destroy map destroyed thread=%lu\n",
+        __func__, __LINE__,
+        pthread_self());
 }
 
 hash_map_t *hash_map_clone(hash_map_t *src_map, size_t data_size)
