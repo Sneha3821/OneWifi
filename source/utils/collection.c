@@ -435,50 +435,117 @@ void  hash_map_destroy    (hash_map_t *map)
 
 hash_map_t *hash_map_clone(hash_map_t *src_map, size_t data_size)
 {
-    element_t *e;
-    hash_element_t *he;
-    hash_map_t *dst_map;
-    void *key, *data = NULL;
+    element_t *e = NULL;
+    hash_element_t *he = NULL;
+    hash_map_t *dst_map = NULL;
+    void *key = NULL;
+    void *data = NULL;
 
-    if (src_map == NULL ||
-        src_map->queue == NULL ||
-        src_map->queue->head == NULL) {
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha ENTER src_map=%p queue=%p head=%p thread=%lu\n",
+        __func__, __LINE__,
+        src_map,
+        src_map ? src_map->queue : NULL,
+        (src_map && src_map->queue) ? src_map->queue->head : NULL,
+        pthread_self());
+
+    /* Validate source map */
+    if (src_map == NULL || src_map->queue == NULL || src_map->queue->head == NULL) {
+        wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha INVALID_SRC src_map=%p queue=%p head=%p thread=%lu\n",
+            __func__, __LINE__,
+            src_map,
+            src_map ? src_map->queue : NULL,
+            (src_map && src_map->queue) ? src_map->queue->head : NULL,
+            pthread_self());
         return NULL;
     }
 
     dst_map = hash_map_create();
     if (dst_map == NULL) {
+        wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha CREATE_FAIL dst_map=NULL thread=%lu\n",
+            __func__, __LINE__, pthread_self());
         return NULL;
     }
 
     e = src_map->queue->head;
     while (e != NULL) {
+
         he = (hash_element_t *)e->data;
         if (he == NULL || he->key == NULL) {
-            hash_map_destroy(dst_map);
-            return NULL;
+            wifi_util_dbg_print(WIFI_MON,
+                "%s %d Sneha INVALID_ELEMENT he=%p key=%p thread=%lu\n",
+                __func__, __LINE__,
+                he, he ? he->key : NULL,
+                pthread_self());
+            goto fail;
         }
 
+        /* Clone key */
         key = strdup(he->key);
         if (key == NULL) {
-            hash_map_destroy(dst_map);
-            return NULL;
+            wifi_util_dbg_print(WIFI_MON,
+                "%s %d Sneha STRDUP_FAIL key=%p thread=%lu\n",
+                __func__, __LINE__, he->key, pthread_self());
+            goto fail;
         }
 
-        if (data_size != 0 && (data = malloc(data_size)) == NULL) {
-            hash_map_destroy(dst_map);
-            return NULL;
-        }
+        /* 🔴 Critical fix: reset data per iteration */
+        data = NULL;
 
-        if (he->data) {
+        /* Clone data */
+        if (data_size && he->data) {
+            data = malloc(data_size);
+            if (data == NULL) {
+                wifi_util_dbg_print(WIFI_MON,
+                    "%s %d Sneha MALLOC_FAIL size=%zu thread=%lu\n",
+                    __func__, __LINE__, data_size, pthread_self());
+                free(key);
+                goto fail;
+            }
             memcpy(data, he->data, data_size);
+        } else if (data_size && !he->data) {
+            wifi_util_dbg_print(WIFI_MON,
+                "%s %d Sneha NULL_DATA key=%s thread=%lu\n",
+                __func__, __LINE__, (char *)he->key, pthread_self());
         }
 
         if (hash_map_put(dst_map, key, data) == -1) {
-            hash_map_destroy(dst_map);
-            return NULL;
+            wifi_util_dbg_print(WIFI_MON,
+                "%s %d Sneha PUT_FAIL key=%s data=%p thread=%lu\n",
+                __func__, __LINE__, (char *)key, data, pthread_self());
+            free(key);
+            free(data);
+            goto fail;
         }
+
+        wifi_util_dbg_print(WIFI_MON,
+            "%s %d Sneha PUT_OK key=%s data=%p thread=%lu\n",
+            __func__, __LINE__, (char *)key, data, pthread_self());
+
         e = e->next;
     }
+
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha SUCCESS dst_map=%p queue=%p head=%p thread=%lu\n",
+        __func__, __LINE__,
+        dst_map,
+        dst_map ? dst_map->queue : NULL,
+        (dst_map && dst_map->queue) ? dst_map->queue->head : NULL,
+        pthread_self());
+
     return dst_map;
+
+fail:
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha FAIL_CLEANUP dst_map=%p queue=%p head=%p thread=%lu\n",
+        __func__, __LINE__,
+        dst_map,
+        dst_map ? dst_map->queue : NULL,
+        (dst_map && dst_map->queue) ? dst_map->queue->head : NULL,
+        pthread_self());
+
+    hash_map_destroy(dst_map);
+    return NULL;
 }
