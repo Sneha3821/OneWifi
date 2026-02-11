@@ -450,16 +450,15 @@ hash_map_t *hash_map_clone(hash_map_t *src_map, size_t data_size)
         pthread_self());
 
     /* Validate source map */
-    if (src_map == NULL || src_map->queue == NULL || src_map->queue->head == NULL) {
-        wifi_util_dbg_print(WIFI_MON,
-            "%s %d Sneha INVALID_SRC src_map=%p queue=%p head=%p thread=%lu\n",
-            __func__, __LINE__,
-            src_map,
-            src_map ? src_map->queue : NULL,
-            (src_map && src_map->queue) ? src_map->queue->head : NULL,
-            pthread_self());
-        return NULL;
-    }
+    if (src_map == NULL || src_map->queue == NULL) {
+    wifi_util_dbg_print(WIFI_MON,
+        "%s %d Sneha INVALID_SRC src_map=%p queue=%p thread=%lu\n",
+        __func__, __LINE__,
+        src_map,
+        src_map ? src_map->queue : NULL,
+        pthread_self());
+    return NULL;
+}
 
     dst_map = hash_map_create();
     if (dst_map == NULL) {
