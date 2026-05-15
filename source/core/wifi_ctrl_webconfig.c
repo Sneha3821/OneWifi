@@ -3251,11 +3251,56 @@ static void create_station_with_private_credentials(webconfig_subdoc_data_t *dat
                 data->u.decoded.radios[radio_index]
                     .vaps.vap_map.vap_array[vap_array_index]
                     .u.sta_info.security.mode = wifi_security_mode_wpa3_personal;
-            } else {
                 data->u.decoded.radios[radio_index]
                     .vaps.vap_map.vap_array[vap_array_index]
-                    .u.sta_info.security.mode = wifi_security_mode_wpa2_personal;
+                    .u.sta_info.security.mfp = wifi_mfp_cfg_required;
+                data->u.decoded.radios[radio_index]
+                    .vaps.vap_map.vap_array[vap_array_index]
+                    .u.sta_info.security.u.key.type = wifi_security_key_type_sae;
+            } else {
+                wifi_security_modes_t private_mode = data->u.decoded.radios[radio_index]
+                    .vaps.vap_map.vap_array[private_vap_array_index].u.bss_info.security.mode;
+                if (private_mode == wifi_security_mode_wpa3_transition) {
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mode = wifi_security_mode_wpa3_transition;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mfp = wifi_mfp_cfg_optional;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.u.key.type = wifi_security_key_type_psk_sae;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.wpa3_transition_disable = data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[private_vap_array_index].u.bss_info.security.wpa3_transition_disable;
+                    wifi_util_info_print(WIFI_CTRL, "%s:%d Inheriting WPA3-Personal-Transition mode from private VAP for radio %d\n",
+                        __func__, __LINE__, radio_index);
+                } else if (private_mode == wifi_security_mode_wpa3_personal) {
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mode = wifi_security_mode_wpa3_personal;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mfp = wifi_mfp_cfg_required;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.u.key.type = wifi_security_key_type_sae;
+                } else {
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mode = wifi_security_mode_wpa2_personal;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.mfp = wifi_mfp_cfg_disabled;
+                    data->u.decoded.radios[radio_index]
+                        .vaps.vap_map.vap_array[vap_array_index]
+                        .u.sta_info.security.u.key.type = wifi_security_key_type_psk;
+                }
             }
+            data->u.decoded.radios[radio_index]
+                .vaps.vap_map.vap_array[vap_array_index]
+                .u.sta_info.security.encr = wifi_encryption_aes;
             data->u.decoded.radios[radio_index]
                 .vaps.vap_map.vap_array[vap_array_index]
                 .u.sta_info.ignite_enabled = false;
