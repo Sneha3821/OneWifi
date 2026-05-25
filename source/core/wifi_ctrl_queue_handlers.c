@@ -317,7 +317,7 @@ static wifi_anqp_node_t* convert_frame_data_to_anqp(int ap_index, mac_address_t 
     wifi_anqp_element_format_t *anqp_info;
     wifi_hs_2_anqp_element_format_t *anqp_hs_2_info;
     unsigned char wfa_oui[3] = {0x50, 0x6f, 0x9a};
-    wifi_anqp_node_t *ead = NULL, *tmp = NULL, *prev = NULL;
+    wifi_anqp_node_t *head = NULL, *tmp = NULL, *prev = NULL;
     wifi_anqp_elem_t *elem;
     signed short anqp_queries_len, anqp_hs_2_queries_len;
     bool first = true;
