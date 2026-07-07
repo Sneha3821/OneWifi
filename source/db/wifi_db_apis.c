@@ -2545,7 +2545,14 @@ int wifidb_get_wifi_security_config(char *vap_name, wifi_vap_security_t *sec)
     } else {
         sec->mode = (pcfg->security_mode_new == WPA3_COMPATIBILITY) ? pcfg->security_mode_new : pcfg->security_mode;
         sec->encr = pcfg->encryption_method_new ? pcfg->encryption_method_new : pcfg->encryption_method;
-    }
+		 wifi_util_dbg_print(WIFI_DB,
+    "%s:%d Sneha vap=%s old_security_mode=%d, security_mode_new=%d, old_encryption_method=%d, new_encryption_method=%d\n",
+    __func__, __LINE__,
+    vap_name,
+    pcfg->security_mode,
+    pcfg->security_mode_new,
+    pcfg->encryption_method,
+    pcfg->encryption_method_new);
 
     convert_security_mode_string_to_integer(&mfp,(char *)&pcfg->mfp_config);
     sec->mfp = (wifi_mfp_cfg_t)mfp;
@@ -5135,13 +5142,15 @@ static void wifidb_vap_config_upgrade(wifi_vap_info_map_t *config, rdk_wifi_vap_
             if( config->vap_array[i].u.bss_info.security.mode == WPA3_COMPATIBILITY) {
                 config->vap_array[i].u.bss_info.security.mode = wifi_security_mode_wpa2_personal;
                 config->vap_array[i].u.bss_info.security.mfp = wifi_mfp_cfg_disabled;
+				wifi_util_dbg_print(WIFI_DB,"%s:%d Sneha vap=%d , security_mode=%d\n",__func__, __LINE__,config->vap_array[i].radio_index,config->vap_array[i].u.bss_info.security.mode};
 #if defined(CONFIG_IEEE80211BE)
                 if( ( config->vap_array[i].radio_index == 2) ) {
                     config->vap_array[i].u.bss_info.security.mode = wifi_security_mode_wpa3_personal;
                     config->vap_array[i].u.bss_info.security.mfp = wifi_mfp_cfg_required;
+					wifi_util_dbg_print(WIFI_DB,"%s:%d Sneha vap=%d , security_mode=%d\n",__func__, __LINE__,config->vap_array[i].radio_index,config->vap_array[i].u.bss_info.security.mode};
                 }
 #endif /* CONFIG_IEEE80211BE */			
-                wifi_util_info_print(WIFI_DB, "%s Update security mode:%d mfp:%d \n", __func__, config->vap_array[i].u.bss_info.security.mode,
+                wifi_util_info_print(WIFI_DB, "%s Sneha VAP= %d , Update security mode:%d mfp:%d \n", __func__,config->vap_array[i].radio_index ,config->vap_array[i].u.bss_info.security.mode,
                         config->vap_array[i].u.bss_info.security.mfp);
                 is_vap_info_upgrade_needed = true;
             }
@@ -5207,7 +5216,7 @@ static void wifidb_vap_config_upgrade(wifi_vap_info_map_t *config, rdk_wifi_vap_
             if (sec->wpa3_transition_disable != false) {
                 sec->wpa3_transition_disable = false;
                 is_vap_sec_upgrade_needed = true;
-                wifi_util_info_print(WIFI_DB, "%s:%d force change wpa3 transition"
+                wifi_util_info_print(WIFI_DB, "%s:%d Sneha force change wpa3 transition"
                     " disable state to false for vap:%s\r\n", __func__, __LINE__,
                     config->vap_array[i].vap_name);
             }
@@ -5261,7 +5270,7 @@ static void wifidb_vap_config_upgrade(wifi_vap_info_map_t *config, rdk_wifi_vap_
                 sec->encr = wifi_encryption_aes_gcmp256;
                 is_vap_sec_upgrade_needed = true;
                 wifi_util_info_print(WIFI_DB,
-                    "%s:%d force change encryption type to AES+GCMP for vap:%s\r\n",
+                    "%s:%dSneha  force change encryption type to AES+GCMP for vap:%s\r\n",
                     __func__, __LINE__, config->vap_array[i].vap_name);
             }
         }
@@ -5277,7 +5286,7 @@ static void wifidb_vap_config_upgrade(wifi_vap_info_map_t *config, rdk_wifi_vap_
             if (sec->encr == wifi_encryption_aes_gcmp256) {
                 is_vap_sec_upgrade_needed = true;
                 wifi_util_info_print(WIFI_DB,
-                    "%s:%d update encryption_method and encryption_method_new for backward "
+                    "%s:%d Sneha update encryption_method and encryption_method_new for backward "
                     "compatibility for vap:%s\r\n",
                     __func__, __LINE__, config->vap_array[i].vap_name);
             }
@@ -5299,7 +5308,7 @@ static void wifidb_vap_config_upgrade(wifi_vap_info_map_t *config, rdk_wifi_vap_
             }
 
             int ret = wifidb_update_wifi_security_config(config->vap_array[i].vap_name, sec);
-            wifi_util_info_print(WIFI_DB, "%s:%d wifidb update wifi vap sec"
+            wifi_util_info_print(WIFI_DB, "%s:%d Sneha wifidb update wifi vap sec"
                 " for vap:%s ret:%d\r\n", __func__, __LINE__,
                 config->vap_array[i].vap_name, ret);
         }
@@ -6772,7 +6781,7 @@ int wifidb_update_wifi_security_config(char *vap_name, wifi_vap_security_t *sec)
         cfg_sec.das_port = sec->u.radius.dasport;
         strncpy(cfg_sec.das_key,sec->u.radius.daskey,sizeof(cfg_sec.das_key)-1);
     }
-    wifi_util_dbg_print(WIFI_DB,"%s:%d: Update table_Wifi_Security_Config table Sec_mode=%d enc_mode=%d r_ser_ip=%s r_ser_port=%d"
+    wifi_util_dbg_print(WIFI_DB,"%s:%d:Sneha Update table_Wifi_Security_Config table Sec_mode=%d enc_mode=%d r_ser_ip=%s r_ser_port=%d"
             "rs_ser_ip=%s rs_ser_ip sec_rad_ser_port=%d mfg=%s cfg_key_type=%d cfg_vap_name=%s rekey_interval = %d strict_rekey  = %d"
             "eapol_key_timeout  = %d eapol_key_retries  = %d eap_identity_req_timeout  = %d eap_identity_req_retries  = %d eap_req_timeout = %d"
             "eap_req_retries = %d disable_pmksa_caching = %d max_auth_attempts=%d blacklist_table_timeout=%d identity_req_retry_interval=%d server_retries=%d "
