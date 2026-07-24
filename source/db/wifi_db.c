@@ -488,9 +488,15 @@ static int init_vap_config_default(int vap_index, wifi_vap_info_t *config,
 
         if (isVapPrivate(vap_index)) {
             cfg.u.bss_info.bssMaxSta = wifi_hal_cap_obj->wifi_prop.BssMaxStaAllow;
+        } else if (is_device_type_cbr2() && isVapHotspot(vap_index)) {
+            cfg.u.bss_info.bssMaxSta = BSS_MAX_NUM_STA_HOTSPOT_CBRV2;
+        } else if (isVapHotspot(vap_index)) {
+            cfg.u.bss_info.bssMaxSta = BSS_MAX_NUM_STA_HOTSPOT;
         } else {
             cfg.u.bss_info.bssMaxSta = BSS_MAX_NUM_STA_COMMON;
         }
+        wifi_util_info_print(WIFI_DB, "DEBUG_BSSMAX: %s:%d init_vap_config_default vap_index=%d isHotspot=%d bssMaxSta=%d\n",
+            __func__, __LINE__, vap_index, isVapHotspot(vap_index), cfg.u.bss_info.bssMaxSta);
 
         memset(ssid, 0, sizeof(ssid));
 

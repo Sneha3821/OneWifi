@@ -4911,6 +4911,29 @@ void wifidb_vap_config_correction(wifi_vap_info_map_t *l_vap_map_param)
             }
         }
 
+        if (isVapHotspot(vap_config->vap_index)) {
+            UINT max_allowed = is_device_type_cbr2() ? BSS_MAX_NUM_STA_HOTSPOT_CBRV2 : BSS_MAX_NUM_STA_HOTSPOT;
+            wifi_util_info_print(WIFI_DB,
+                "DEBUG_BSSMAX: %s:%d hotspot_vap:%d current_bssMaxSta=%d max_allowed=%d\n",
+                __func__, __LINE__, vap_config->vap_index,
+                vap_config->u.bss_info.bssMaxSta, max_allowed);
+            if (vap_config->u.bss_info.bssMaxSta > max_allowed) {
+                wifi_util_info_print(WIFI_DB,
+                    "DEBUG_BSSMAX: %s:%d Correcting bssMaxSta for hotspot_vap:%d from %d to %d\n",
+                    __func__, __LINE__, vap_config->vap_index,
+                    vap_config->u.bss_info.bssMaxSta, max_allowed);
+                vap_config->u.bss_info.bssMaxSta = max_allowed;
+
+                rdk_vap_config = get_wifidb_rdk_vaps(vap_config->radio_index);
+                if (rdk_vap_config == NULL) {
+                    wifi_util_error_print(WIFI_DB, "%s:%d: failed to get rdk vaps for radio index %d\n",
+                        __func__, __LINE__, vap_config->radio_index);
+                } else {
+                    update_wifi_vap_info(vap_config->vap_name, vap_config, rdk_vap_config);
+                }
+            }
+        }
+
         if (isVapPrivate(vap_config->vap_index) &&
             is_sec_mode_personal(vap_config->u.bss_info.security.mode)) {
 #if defined(FEATURE_SUPPORT_WPS) &&  !defined(_SR213_PRODUCT_REQ_)
