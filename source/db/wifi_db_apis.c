@@ -4912,7 +4912,7 @@ void wifidb_vap_config_correction(wifi_vap_info_map_t *l_vap_map_param)
         }
 
         if (isVapHotspot(vap_config->vap_index)) {
-            UINT max_allowed = is_device_type_cbr2() ? BSS_MAX_NUM_STA_HOTSPOT_CBRV2 : BSS_MAX_NUM_STA_HOTSPOT;
+            UINT max_allowed = is_device_type_cbr2() ? BSS_MAX_NUM_STA_HOTSPOT_CBRV2 : BSS_MAX_NUM_STA_HOTSPOT_XB;
             wifi_util_info_print(WIFI_DB,
                 "DEBUG_BSSMAX: %s:%d hotspot_vap:%d current_bssMaxSta=%d max_allowed=%d\n",
                 __func__, __LINE__, vap_config->vap_index,
