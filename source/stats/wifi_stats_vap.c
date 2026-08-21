@@ -28,6 +28,7 @@
 #include "wifi_monitor.h"
 #include "wifi_ctrl.h"
 #include "wifi_util.h"
+#include "wifi_hal.h"
 
 int validate_vap_args(wifi_mon_stats_args_t *args)  
 {
@@ -94,13 +95,36 @@ int execute_vap_stats_api(wifi_mon_collector_element_t *c_elem, wifi_monitor_t *
         return RETURN_ERR;  
     }
 
-    /*
-    if (wifi_getxxx(args->vap_index, vap_stats) != RETURN_OK) {  
-        wifi_util_error_print(WIFI_MON, "%s:%d wifi_getxxx failed for vap_index %d\n",  
-            __func__, __LINE__, args->vap_index);  
-        free(vap_stats);  
-        return RETURN_ERR;  
-    } */
+    wifi_ssidTrafficStats2_t hal_stats;
+    memset(&hal_stats, 0, sizeof(hal_stats));
+    if (wifi_getSSIDTrafficStats2(args->vap_index, &hal_stats) != RETURN_OK) {
+        wifi_util_error_print(WIFI_MON, "%s:%d wifi_getSSIDTrafficStats2 failed for vap_index %d\n",
+            __func__, __LINE__, args->vap_index);
+        free(vap_stats);
+        return RETURN_ERR;
+    }
+    vap_stats->ssid_BytesSent = hal_stats.ssid_BytesSent;
+    vap_stats->ssid_BytesReceived = hal_stats.ssid_BytesReceived;
+    vap_stats->ssid_PacketsSent = hal_stats.ssid_PacketsSent;
+    vap_stats->ssid_PacketsReceived = hal_stats.ssid_PacketsReceived;
+    vap_stats->ssid_ErrorsSent = hal_stats.ssid_ErrorsSent;
+    vap_stats->ssid_ErrorsReceived = hal_stats.ssid_ErrorsReceived;
+    vap_stats->ssid_UnicastPacketsSent = hal_stats.ssid_UnicastPacketsSent;
+    vap_stats->ssid_UnicastPacketsReceived = hal_stats.ssid_UnicastPacketsReceived;
+    vap_stats->ssid_DiscardPacketsSent = hal_stats.ssid_DiscardedPacketsSent;
+    vap_stats->ssid_DiscardPacketsReceived = hal_stats.ssid_DiscardedPacketsReceived;
+    vap_stats->ssid_MulticastPacketsSent = hal_stats.ssid_MulticastPacketsSent;
+    vap_stats->ssid_MulticastPacketsReceived = hal_stats.ssid_MulticastPacketsReceived;
+    vap_stats->ssid_BroadcastPacketsSent = hal_stats.ssid_BroadcastPacketsSent;
+    vap_stats->ssid_BroadcastPacketsReceived = hal_stats.ssid_BroadcastPacketsRecevied;
+    vap_stats->ssid_UnknownProtoPacketsReceived = hal_stats.ssid_UnknownPacketsReceived;
+    vap_stats->ssid_RetransCount = hal_stats.ssid_RetransCount;
+    vap_stats->ssid_FailedRetransCount = hal_stats.ssid_FailedRetransCount;
+    vap_stats->ssid_RetryCount = hal_stats.ssid_RetryCount;
+    vap_stats->ssid_MultipleRetryCount = hal_stats.ssid_MultipleRetryCount;
+    vap_stats->ssid_ACKFailureCount = hal_stats.ssid_ACKFailureCount;
+    vap_stats->ssid_AggregatedPacketCount = hal_stats.ssid_AggregatedPacketCount;
+
     getVAPArrayIndexFromVAPIndex(args->vap_index, &vap_array_index);
 
     pthread_mutex_lock(&mon_data->data_lock);  
