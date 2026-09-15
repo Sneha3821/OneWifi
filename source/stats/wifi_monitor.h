@@ -38,6 +38,12 @@ typedef struct {
 } ap_params_t;
 
 typedef struct {
+    ULONG ssid_UnicastBytesSent;
+    ULONG ssid_UnicastBytesReceived;
+    ULONG ssid_MulticastBytesSent;
+    ULONG ssid_MulticastBytesReceived;
+    ULONG ssid_BroadcastBytesSent;
+    ULONG ssid_BroadcastBytesReceived;
     ULONG ssid_BytesSent;
     ULONG ssid_BytesReceived;
     ULONG ssid_PacketsSent;

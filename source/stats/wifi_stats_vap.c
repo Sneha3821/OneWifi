@@ -89,6 +89,12 @@ int execute_vap_stats_api(wifi_mon_collector_element_t *c_elem, wifi_monitor_t *
         return RETURN_ERR;  
     }  
     args = c_elem->args;  
+    if (getVAPArrayIndexFromVAPIndex(args->vap_index, &vap_array_index) != RETURN_OK) {
+        wifi_util_error_print(WIFI_MON, "%s:%d invalid vap_index %d\n", __func__, __LINE__,
+            args->vap_index);
+        return RETURN_ERR;
+    }
+
     vap_stats = (vap_traffic_stats_t *)calloc(1, sizeof(vap_traffic_stats_t));  
     if (vap_stats == NULL) {  
         wifi_util_error_print(WIFI_MON, "%s:%d calloc failed\n", __func__, __LINE__);
@@ -124,8 +130,6 @@ int execute_vap_stats_api(wifi_mon_collector_element_t *c_elem, wifi_monitor_t *
     vap_stats->ssid_MultipleRetryCount = hal_stats.ssid_MultipleRetryCount;
     vap_stats->ssid_ACKFailureCount = hal_stats.ssid_ACKFailureCount;
     vap_stats->ssid_AggregatedPacketCount = hal_stats.ssid_AggregatedPacketCount;
-
-    getVAPArrayIndexFromVAPIndex(args->vap_index, &vap_array_index);
 
     pthread_mutex_lock(&mon_data->data_lock);  
     memcpy(&mon_data->bssid_data[vap_array_index].vap_traffic, vap_stats, sizeof(vap_traffic_stats_t));
@@ -171,13 +175,21 @@ int copy_vap_stats_from_cache(wifi_mon_provider_element_t *p_elem, void **stats,
 {
     vap_traffic_stats_t *out;
     unsigned int vap_array_index;
-    if ((p_elem == NULL) || (mon_cache == NULL) || (p_elem->mon_stats_config == NULL)) {  
+    if ((p_elem == NULL) || (stats == NULL) || (stat_array_size == NULL) ||
+        (mon_cache == NULL) || (p_elem->mon_stats_config == NULL)) {
         wifi_util_error_print(WIFI_MON, "%s:%d invalid arguments\n", __func__, __LINE__);  
         return RETURN_ERR;  
     }
 
     wifi_util_dbg_print(WIFI_MON, "%s:%d copy_vap_stats_from_cache for vap index: %d\n", __func__, __LINE__, 
     p_elem->mon_stats_config->args.vap_index);
+
+    if (getVAPArrayIndexFromVAPIndex(p_elem->mon_stats_config->args.vap_index,
+        &vap_array_index) != RETURN_OK) {
+        wifi_util_error_print(WIFI_MON, "%s:%d invalid vap_index %d\n", __func__, __LINE__,
+            p_elem->mon_stats_config->args.vap_index);
+        return RETURN_ERR;
+    }
 
     pthread_mutex_lock(&mon_cache->data_lock);  
     out = calloc(1, sizeof(vap_traffic_stats_t));  
@@ -186,7 +198,6 @@ int copy_vap_stats_from_cache(wifi_mon_provider_element_t *p_elem, void **stats,
         return RETURN_ERR;  
     }
 
-    getVAPArrayIndexFromVAPIndex(p_elem->mon_stats_config->args.vap_index, &vap_array_index);
     memcpy(out, &mon_cache->bssid_data[vap_array_index].vap_traffic, sizeof(vap_traffic_stats_t));
     pthread_mutex_unlock(&mon_cache->data_lock);  
 

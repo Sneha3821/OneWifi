@@ -6482,146 +6482,145 @@ Stats4_GetParamUlongValue
     )
 {
     wifi_vap_info_t *pcfg = (wifi_vap_info_t *)hInsContext;
-    wifi_monitor_t *monitor_param = (wifi_monitor_t *)get_wifi_monitor();
-    unsigned int vap_array_index = 0;
+    wifi_ssidTrafficStats2_t vap_stats;
 
-    if (pcfg == NULL || monitor_param == NULL) {
+    if (pcfg == NULL || ParamName == NULL || puLong == NULL) {
         wifi_util_dbg_print(WIFI_DMCLI, "%s:%d Null pointer\n", __FUNCTION__, __LINE__);
         return FALSE;
     }
 
-    if (getVAPArrayIndexFromVAPIndex(pcfg->vap_index, &vap_array_index) != RETURN_OK) {
-        wifi_util_dbg_print(WIFI_DMCLI, "%s:%d invalid vap_index %d\n", __FUNCTION__, __LINE__, pcfg->vap_index);
+    memset(&vap_stats, 0, sizeof(vap_stats));
+    if (wifi_getSSIDTrafficStats2(pcfg->vap_index, &vap_stats) != RETURN_OK) {
+        wifi_util_error_print(WIFI_DMCLI, "%s:%d failed to get stats for vap_index %d\n",
+            __FUNCTION__, __LINE__, pcfg->vap_index);
         return FALSE;
     }
-
-    vap_traffic_stats_t *vap_stats = &monitor_param->bssid_data[vap_array_index].vap_traffic;
 
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "BytesSent", TRUE))
     {
-        *puLong = vap_stats->ssid_BytesSent;
+        *puLong = vap_stats.ssid_BytesSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "BytesReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_BytesReceived;
+        *puLong = vap_stats.ssid_BytesReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "PacketsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_PacketsSent;
+        *puLong = vap_stats.ssid_PacketsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "PacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_PacketsReceived;
+        *puLong = vap_stats.ssid_PacketsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "ErrorsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_ErrorsSent;
+        *puLong = vap_stats.ssid_ErrorsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "ErrorsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_ErrorsReceived;
+        *puLong = vap_stats.ssid_ErrorsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "UnicastPacketsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_UnicastPacketsSent;
+        *puLong = vap_stats.ssid_UnicastPacketsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "UnicastPacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_UnicastPacketsReceived;
+        *puLong = vap_stats.ssid_UnicastPacketsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "DiscardPacketsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_DiscardPacketsSent;
+        *puLong = vap_stats.ssid_DiscardedPacketsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "DiscardPacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_DiscardPacketsReceived;
+        *puLong = vap_stats.ssid_DiscardedPacketsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "MulticastPacketsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_MulticastPacketsSent;
+        *puLong = vap_stats.ssid_MulticastPacketsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "MulticastPacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_MulticastPacketsReceived;
+        *puLong = vap_stats.ssid_MulticastPacketsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "BroadcastPacketsSent", TRUE))
     {
-        *puLong = vap_stats->ssid_BroadcastPacketsSent;
+        *puLong = vap_stats.ssid_BroadcastPacketsSent;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "BroadcastPacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_BroadcastPacketsReceived;
+        *puLong = vap_stats.ssid_BroadcastPacketsRecevied;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "UnknownProtoPacketsReceived", TRUE))
     {
-        *puLong = vap_stats->ssid_UnknownProtoPacketsReceived;
+        *puLong = vap_stats.ssid_UnknownPacketsReceived;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "RetransCount", TRUE))
     {
-        *puLong = vap_stats->ssid_RetransCount;
+        *puLong = vap_stats.ssid_RetransCount;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "FailedRetransCount", TRUE))
     {
-        *puLong = vap_stats->ssid_FailedRetransCount;
+        *puLong = vap_stats.ssid_FailedRetransCount;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "RetryCount", TRUE))
     {
-        *puLong = vap_stats->ssid_RetryCount;
+        *puLong = vap_stats.ssid_RetryCount;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "MultipleRetryCount", TRUE))
     {
-        *puLong = vap_stats->ssid_MultipleRetryCount;
+        *puLong = vap_stats.ssid_MultipleRetryCount;
         return TRUE;
     }
     
 
     if( AnscEqualString(ParamName, "ACKFailureCount", TRUE))
     {
-        *puLong = vap_stats->ssid_ACKFailureCount;
+        *puLong = vap_stats.ssid_ACKFailureCount;
         return TRUE;
     }
 
     if( AnscEqualString(ParamName, "AggregatedPacketCount", TRUE))
     {
-        *puLong = vap_stats->ssid_AggregatedPacketCount;
+        *puLong = vap_stats.ssid_AggregatedPacketCount;
         return TRUE;
     }
 	/* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
