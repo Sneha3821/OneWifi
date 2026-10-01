@@ -72,6 +72,14 @@ TG4="TG4482A"
 onewifi_restart_wifi()
 {
     echo_t "private_vap is down self heal is executing" >> $LOG_FILE
+    # [LTE-3072] capture 5GHz driver/BSS state at the moment self-heal fires, before restart
+    for lte_ifc in wl1 wl1.1 wl2 wl2.1; do
+        echo_t "[LTE-3072] $lte_ifc isup=$(wl -i $lte_ifc isup 2>&1) bssid=$(wl -i $lte_ifc bssid 2>&1) bss=$(wl -i $lte_ifc bss 2>&1)" >> $LOG_FILE
+    done
+    echo_t "[LTE-3072] wl1 status:" >> $LOG_FILE
+    wl -i wl1 status >> $LOG_FILE 2>&1
+    echo_t "[LTE-3072] dmesg tail(40):" >> $LOG_FILE
+    dmesg | tail -40 >> $LOG_FILE 2>&1
     systemctl restart onewifi.service
     echo_t "private_vap self heal executed onewifi restarted" >> $LOG_FILE
 }
@@ -183,6 +191,10 @@ check_bss_queue_full()
 wave_driver_restart()
 {
     echo_t "5G private SSID is down self heal is executing" >> $LOG_FILE
+    # [LTE-3072] capture 5GHz driver/BSS state at 5G-private self-heal trigger
+    for lte_ifc in wl1 wl1.1 wl2 wl2.1; do
+        echo_t "[LTE-3072] 5g-selfheal $lte_ifc isup=$(wl -i $lte_ifc isup 2>&1) bssid=$(wl -i $lte_ifc bssid 2>&1) bss=$(wl -i $lte_ifc bss 2>&1)" >> $LOG_FILE
+    done
     systemctl stop onewifi.service
     systemctl stop systemd-wave_init.service
     sleep 3
