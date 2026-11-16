@@ -508,6 +508,17 @@ static int decode_security_blob(wifi_vap_info_t *vap_info, cJSON *security, pErr
         }
     }
 
+    if (vap_info->u.bss_info.security.mode == wifi_security_mode_wpa3_enterprise &&
+        vap_info->u.bss_info.security.mfp != wifi_mfp_cfg_required) {
+        wifi_util_error_print(WIFI_CTRL, "%s: WPA3-Enterprise requires \"MFPConfig\" Required\n",
+            __func__);
+        if (execRetVal) {
+            strncpy(execRetVal->ErrorMsg, "Invalid MFPConfig for WPA3-Enterprise",
+                sizeof(execRetVal->ErrorMsg) - 1);
+        }
+        return RETURN_ERR;
+    }
+
     if (isVapHotspot(vap_info->vap_index)) {
 
         radius_param = cJSON_GetObjectItem(security, "RadiusSettings");
