@@ -8076,7 +8076,7 @@ int wifidb_init_vap_config_default(int vap_index, wifi_vap_info_t *config,
             }
         } else if (isVapHotspotSecure(vap_index)) {
             cfg->u.bss_info.bssHotspot = true;
-            if (band == WIFI_FREQUENCY_6_BAND) {
+            if (is_hotspot_secure_wpa3_enterprise_default(&wifi_hal_cap_obj->wifi_prop, band)) {
                 cfg->u.bss_info.security.mode = wifi_security_mode_wpa3_enterprise;
                 cfg->u.bss_info.security.mfp = wifi_mfp_cfg_required;
 #ifdef CONFIG_IEEE80211BE

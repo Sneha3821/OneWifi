@@ -478,6 +478,7 @@ bool is_5g_20M_channel_in_dfs(int channel);
 void decode_acs_keep_out_json(const char *data, unsigned int number_of_radios, webconfig_subdoc_data_t *subdoc_data);
 void* bus_get_keep_out_json();
 bool is_6g_supported_device(wifi_platform_property_t *wifi_prop);
+bool is_hotspot_secure_wpa3_enterprise_default(wifi_platform_property_t *wifi_prop, int band);
 int scan_mode_type_conversion(wifi_neighborScanMode_t *scan_mode_enum, char *scan_mode_str, int scan_mode_len, unsigned int conv_type);
 bool is_vap_param_config_changed(wifi_vap_info_t *vap_info_old, wifi_vap_info_t *vap_info_new,
     rdk_wifi_vap_info_t *rdk_old, rdk_wifi_vap_info_t *rdk_new, bool isSta);

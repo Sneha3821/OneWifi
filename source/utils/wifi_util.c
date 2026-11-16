@@ -3985,6 +3985,20 @@ bool is_6g_supported_device(wifi_platform_property_t *wifi_prop)
     return false;
 }
 
+bool is_hotspot_secure_wpa3_enterprise_default(wifi_platform_property_t *wifi_prop, int band)
+{
+    switch (band) {
+    case WIFI_FREQUENCY_6_BAND:
+        return true;
+    case WIFI_FREQUENCY_5_BAND:
+    case WIFI_FREQUENCY_5L_BAND:
+    case WIFI_FREQUENCY_5H_BAND:
+        return is_6g_supported_device(wifi_prop);
+    default:
+        return false;
+    }
+}
+
 wifi_scan_mode_mapper wifiScanModeMap[] =
 {
     {WIFI_RADIO_SCAN_MODE_NONE, "None"},
