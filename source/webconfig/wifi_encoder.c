@@ -1241,11 +1241,16 @@ webconfig_error_t encode_security_object(const wifi_vap_security_t *security_inf
         return webconfig_error_encode;
     }
 
+    if (security_info->mfp != wifi_mfp_cfg_required &&
+        security_info->mode == wifi_security_mode_wpa3_enterprise) {
+        wifi_util_error_print(WIFI_WEBCONFIG, "%s:%d invalid MFP %d value for %d mode\n", __func__,
+            __LINE__, security_info->mfp, security_info->mode);
+        return webconfig_error_encode;
+    }
 #ifndef CONFIG_IEEE80211BE
     if (security_info->mfp != wifi_mfp_cfg_required &&
         (security_info->mode == wifi_security_mode_enhanced_open ||
-        security_info->mode == wifi_security_mode_wpa3_personal ||
-        security_info->mode == wifi_security_mode_wpa3_enterprise)) {
+        security_info->mode == wifi_security_mode_wpa3_personal)) {
         wifi_util_error_print(WIFI_WEBCONFIG, "%s:%d invalid MFP %d value for %d mode\n", __func__,
             __LINE__, security_info->mfp, security_info->mode);
         return webconfig_error_encode;

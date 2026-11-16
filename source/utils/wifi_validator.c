@@ -1102,12 +1102,25 @@ int validate_enterprise_security(const cJSON *security, wifi_vap_info_t *vap_inf
         }
         if (strcmp(param->valuestring, "AES") == 0) {
             vap_info->u.bss_info.security.encr = wifi_encryption_aes;
-#ifdef CONFIG_IEEE80211BE
         } else if (strcmp(param->valuestring, "AES+GCMP") == 0) {
+#ifdef CONFIG_IEEE80211BE
             vap_info->u.bss_info.security.encr = wifi_encryption_aes_gcmp256;
+#else
+            wifi_util_dbg_print(WIFI_PASSPOINT,"%s:%d: AES+GCMP is not supported on this build\n",
+                    __func__, __LINE__);
+            strncpy(execRetVal->ErrorMsg, "Invalid enc mode for hotspot secure vap",sizeof(execRetVal->ErrorMsg)-1);
+            return RETURN_ERR;
 #endif /* CONFIG_IEEE80211BE */
         } else {
             vap_info->u.bss_info.security.encr = wifi_encryption_aes_tkip;
+        }
+
+        if (!is_valid_encr_for_mode(vap_info->u.bss_info.security.mode,
+                vap_info->u.bss_info.security.encr)) {
+            wifi_util_dbg_print(WIFI_PASSPOINT,"%s:%d: enc mode %s is not valid for security mode %d\n",
+                    __func__, __LINE__, param->valuestring, vap_info->u.bss_info.security.mode);
+            strncpy(execRetVal->ErrorMsg, "Invalid enc mode for hotspot secure vap",sizeof(execRetVal->ErrorMsg)-1);
+            return RETURN_ERR;
         }
 
         // MFPConfig
