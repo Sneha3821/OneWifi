@@ -29,7 +29,6 @@
 #include "wifi_ctrl.h"
 #include "wifi_util.h"
 #include "wifi_hal.h"
-#include "misc.h"
 
 int validate_vap_args(wifi_mon_stats_args_t *args)  
 {
@@ -102,38 +101,39 @@ int execute_vap_stats_api(wifi_mon_collector_element_t *c_elem, wifi_monitor_t *
         return RETURN_ERR;  
     }
 
-    wifi_ssidTrafficStats2_t hal_stats;
-    memset(&hal_stats, 0, sizeof(hal_stats));
-    if (get_misc_descriptor()->wifi_getSSIDTrafficStats2_fn(args->vap_index, &hal_stats) !=
-        RETURN_OK) {
-        wifi_util_error_print(WIFI_MON, "%s:%d wifi_getSSIDTrafficStats2 failed for vap_index %d\n",
+    wifi_associated_dev3_t *associated_dev_array = NULL;
+    unsigned int associated_dev_count = 0;
+    unsigned int i;
+    if (wifi_getApAssociatedDeviceDiagnosticResult3(args->vap_index, &associated_dev_array,
+        &associated_dev_count) != RETURN_OK) {
+        wifi_util_error_print(WIFI_MON, "%s:%d failed to get station stats for vap_index %d\n",
+            __func__, __LINE__, args->vap_index);
+        free(vap_stats);
+        free(associated_dev_array);
+        return RETURN_ERR;
+    }
+    if (associated_dev_count > 0 && associated_dev_array == NULL) {
+        wifi_util_error_print(WIFI_MON, "%s:%d station stats are missing for vap_index %d\n",
             __func__, __LINE__, args->vap_index);
         free(vap_stats);
         return RETURN_ERR;
     }
-    vap_stats->ssid_BytesSent = hal_stats.ssid_BytesSent;
-    vap_stats->ssid_BytesReceived = hal_stats.ssid_BytesReceived;
-    vap_stats->ssid_PacketsSent = hal_stats.ssid_PacketsSent;
-    vap_stats->ssid_PacketsReceived = hal_stats.ssid_PacketsReceived;
-    vap_stats->ssid_ErrorsSent = hal_stats.ssid_ErrorsSent;
-    vap_stats->ssid_ErrorsReceived = hal_stats.ssid_ErrorsReceived;
-    vap_stats->ssid_UnicastPacketsSent = hal_stats.ssid_UnicastPacketsSent;
-    vap_stats->ssid_UnicastPacketsReceived = hal_stats.ssid_UnicastPacketsReceived;
-    vap_stats->ssid_DiscardPacketsSent = hal_stats.ssid_DiscardedPacketsSent;
-    vap_stats->ssid_DiscardPacketsReceived = hal_stats.ssid_DiscardedPacketsReceived;
-    vap_stats->ssid_MulticastPacketsSent = hal_stats.ssid_MulticastPacketsSent;
-    vap_stats->ssid_MulticastPacketsReceived = hal_stats.ssid_MulticastPacketsReceived;
-    vap_stats->ssid_BroadcastPacketsSent = hal_stats.ssid_BroadcastPacketsSent;
-    vap_stats->ssid_BroadcastPacketsReceived = hal_stats.ssid_BroadcastPacketsRecevied;
-    vap_stats->ssid_UnknownProtoPacketsReceived = hal_stats.ssid_UnknownPacketsReceived;
-    vap_stats->ssid_RetransCount = hal_stats.ssid_RetransCount;
-    vap_stats->ssid_FailedRetransCount = hal_stats.ssid_FailedRetransCount;
-    vap_stats->ssid_RetryCount = hal_stats.ssid_RetryCount;
-    vap_stats->ssid_MultipleRetryCount = hal_stats.ssid_MultipleRetryCount;
-    vap_stats->ssid_ACKFailureCount = hal_stats.ssid_ACKFailureCount;
-    vap_stats->ssid_AggregatedPacketCount = hal_stats.ssid_AggregatedPacketCount;
-    /* ssid_{Unicast,Multicast,Broadcast}Bytes{Sent,Received} stay 0: wifi_getSSIDTrafficStats2()
-     * has no per-cast byte fields to source them from. */
+
+    for (i = 0; i < associated_dev_count; i++) {
+        vap_stats->ssid_BytesSent += associated_dev_array[i].cli_BytesSent;
+        vap_stats->ssid_BytesReceived += associated_dev_array[i].cli_BytesReceived;
+        vap_stats->ssid_PacketsSent += associated_dev_array[i].cli_PacketsSent;
+        vap_stats->ssid_PacketsReceived += associated_dev_array[i].cli_PacketsReceived;
+        vap_stats->ssid_ErrorsSent += associated_dev_array[i].cli_ErrorsSent;
+        vap_stats->ssid_ErrorsReceived += associated_dev_array[i].cli_RxErrors;
+        vap_stats->ssid_UnicastPacketsSent += associated_dev_array[i].cli_PacketsSent;
+        vap_stats->ssid_UnicastPacketsReceived += associated_dev_array[i].cli_PacketsReceived;
+        vap_stats->ssid_RetransCount += associated_dev_array[i].cli_RetransCount;
+        vap_stats->ssid_FailedRetransCount += associated_dev_array[i].cli_FailedRetransCount;
+        vap_stats->ssid_RetryCount += associated_dev_array[i].cli_RetryCount;
+        vap_stats->ssid_MultipleRetryCount += associated_dev_array[i].cli_MultipleRetryCount;
+    }
+    free(associated_dev_array);
 
     pthread_mutex_lock(&mon_data->data_lock);  
     memcpy(&mon_data->bssid_data[vap_array_index].vap_traffic, vap_stats, sizeof(vap_traffic_stats_t));

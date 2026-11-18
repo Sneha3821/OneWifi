@@ -107,7 +107,6 @@ extern bool g_update_wifi_region;
 #include "wifi_ctrl.h"
 #include "wifi_mgr.h"
 #include "dml_onewifi_api.h"
-#include "misc.h"
 extern unsigned int startTime[MAX_NUM_RADIOS];
 # define WEPKEY_TYPE_SET 3
 # define KEYPASSPHRASE_SET 2
@@ -6507,6 +6506,52 @@ Stats4_GetParamIntValue
     return:     TRUE if succeeded.
 
 **********************************************************************/
+static int get_ssid_traffic_stats_from_associated_devices(unsigned int vap_index,
+    wifi_ssidTrafficStats2_t *stats)
+{
+    wifi_associated_dev3_t *associated_dev_array = NULL;
+    unsigned int associated_dev_count = 0;
+    unsigned int i;
+
+    if (stats == NULL) {
+        return RETURN_ERR;
+    }
+
+    memset(stats, 0, sizeof(*stats));
+    if (wifi_getApAssociatedDeviceDiagnosticResult3(vap_index, &associated_dev_array,
+        &associated_dev_count) != RETURN_OK) {
+        wifi_util_error_print(WIFI_DMCLI, "%s:%d failed to get station stats for vap_index %u\n",
+            __func__, __LINE__, vap_index);
+        free(associated_dev_array);
+        return RETURN_ERR;
+    }
+
+    if (associated_dev_count > 0 && associated_dev_array == NULL) {
+        wifi_util_error_print(WIFI_DMCLI, "%s:%d station stats are missing for vap_index %u\n",
+            __func__, __LINE__, vap_index);
+        return RETURN_ERR;
+    }
+
+    /* GET_STATION reports peer totals; it does not split multicast and broadcast traffic. */
+    for (i = 0; i < associated_dev_count; i++) {
+        stats->ssid_BytesSent += associated_dev_array[i].cli_BytesSent;
+        stats->ssid_BytesReceived += associated_dev_array[i].cli_BytesReceived;
+        stats->ssid_PacketsSent += associated_dev_array[i].cli_PacketsSent;
+        stats->ssid_PacketsReceived += associated_dev_array[i].cli_PacketsReceived;
+        stats->ssid_ErrorsSent += associated_dev_array[i].cli_ErrorsSent;
+        stats->ssid_ErrorsReceived += associated_dev_array[i].cli_RxErrors;
+        stats->ssid_UnicastPacketsSent += associated_dev_array[i].cli_PacketsSent;
+        stats->ssid_UnicastPacketsReceived += associated_dev_array[i].cli_PacketsReceived;
+        stats->ssid_RetransCount += associated_dev_array[i].cli_RetransCount;
+        stats->ssid_FailedRetransCount += associated_dev_array[i].cli_FailedRetransCount;
+        stats->ssid_RetryCount += associated_dev_array[i].cli_RetryCount;
+        stats->ssid_MultipleRetryCount += associated_dev_array[i].cli_MultipleRetryCount;
+    }
+
+    free(associated_dev_array);
+    return RETURN_OK;
+}
+
 BOOL
 Stats4_GetParamUlongValue
     (
@@ -6529,13 +6574,11 @@ Stats4_GetParamUlongValue
         return FALSE;
     }
 
-    /* Route through the platform misc callback so the data-model library does not link directly
-     * against wifi_getSSIDTrafficStats2 (absent on RPi/Banana Pi R4/mock HALs). */
     pthread_mutex_lock(&cache_lock);
     now = time(NULL);
     if (cached_vap_index != (int)pcfg->vap_index || (now - cached_at) >= 2) {
         memset(&cached_stats, 0, sizeof(cached_stats));
-        if (get_misc_descriptor()->wifi_getSSIDTrafficStats2_fn(pcfg->vap_index, &cached_stats) !=
+        if (get_ssid_traffic_stats_from_associated_devices(pcfg->vap_index, &cached_stats) !=
             RETURN_OK) {
             cached_vap_index = -1;
             pthread_mutex_unlock(&cache_lock);
