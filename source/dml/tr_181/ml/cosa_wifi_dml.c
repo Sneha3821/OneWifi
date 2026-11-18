@@ -16324,6 +16324,8 @@ AssociatedDevice1_Synchronize
         return -1;
     }
 
+    wifi_util_dbg_print(WIFI_DMCLI, "%s:%d associated-device table sync vap:%u radio:%u\n",
+        __func__, __LINE__, vap_info->vap_index, vap_info->radio_index);
     get_associated_devices_data(vap_info->radio_index);
     return ANSC_STATUS_SUCCESS;
 }

@@ -35,6 +35,18 @@
 
 webconfig_dml_t webconfig_dml;
 
+#define ASSOC_FULL_REFRESH_MIN_INTERVAL_MS 1000
+
+static pthread_mutex_t assoc_full_refresh_lock = PTHREAD_MUTEX_INITIALIZER;
+static struct timespec assoc_full_refresh_last_success;
+static bool assoc_full_refresh_valid;
+
+static long long assoc_full_refresh_age_ms(const struct timespec *now)
+{
+    return ((long long)now->tv_sec - (long long)assoc_full_refresh_last_success.tv_sec) * 1000LL +
+        ((long long)now->tv_nsec - (long long)assoc_full_refresh_last_success.tv_nsec) / 1000000LL;
+}
+
 dml_vap_default vap_default[MAX_VAP];
 dml_radio_default radio_cfg[MAX_NUM_RADIOS];
 dml_global_default global_cfg;
@@ -349,6 +361,7 @@ void full_assoc_list_update(webconfig_subdoc_decoded_data_t *params)
     assoc_dev_data_t *assoc_dev_data, *temp_assoc_dev_data;
     char key[64] = {0};
 
+    pthread_mutex_lock(&assoc_full_refresh_lock);
     pthread_mutex_lock(&webconfig_dml.assoc_dev_lock);
     for (r_index = 0; r_index < (int)get_num_radio_dml(); r_index++) {
         for (v_index = 0; v_index < MAX_NUM_VAP_PER_RADIO; v_index++) {
@@ -370,6 +383,12 @@ void full_assoc_list_update(webconfig_subdoc_decoded_data_t *params)
         }
     }
     pthread_mutex_unlock(&webconfig_dml.assoc_dev_lock);
+    if (clock_gettime(CLOCK_MONOTONIC, &assoc_full_refresh_last_success) == 0) {
+        assoc_full_refresh_valid = true;
+    } else {
+        assoc_full_refresh_valid = false;
+    }
+    pthread_mutex_unlock(&assoc_full_refresh_lock);
 }
 
 void existing_assoc_list_update(webconfig_subdoc_decoded_data_t *params)
@@ -380,6 +399,7 @@ void existing_assoc_list_update(webconfig_subdoc_decoded_data_t *params)
     hash_map_t *associated_devices_map = NULL;
     assoc_dev_data_t *dml_temp_assoc_data;
 
+    pthread_mutex_lock(&assoc_full_refresh_lock);
     pthread_mutex_lock(&webconfig_dml.assoc_dev_lock);
     for (r_index = 0; r_index < (int)get_num_radio_dml(); r_index++) {
         for (v_index = 0; v_index < MAX_NUM_VAP_PER_RADIO; v_index++) {
@@ -424,6 +444,7 @@ void existing_assoc_list_update(webconfig_subdoc_decoded_data_t *params)
         }
     }
     pthread_mutex_unlock(&webconfig_dml.assoc_dev_lock);
+    pthread_mutex_unlock(&assoc_full_refresh_lock);
 }
 
 void update_dml_assoc_list(webconfig_subdoc_data_t *data)
@@ -584,7 +605,7 @@ webconfig_error_t webconfig_dml_apply(webconfig_dml_t *consumer, webconfig_subdo
     return webconfig_error_none;
 }
 
-void get_associated_devices_data(unsigned int radio_index)
+static bool get_associated_devices_data_refresh(void)
 {
     int itr=0, itrj=0;
     webconfig_subdoc_data_t *data = NULL;
@@ -595,14 +616,13 @@ void get_associated_devices_data(unsigned int radio_index)
     str = (char *)get_assoc_devices_blob();
     if (str == NULL) {
         wifi_util_error_print(WIFI_DMCLI,"%s %d Null pointer get_assoc_devices_blob string\n", __func__, __LINE__);
-        return;
+        return false;
     }
     data = (webconfig_subdoc_data_t *)malloc(sizeof(webconfig_subdoc_data_t));
     if (data == NULL) {
         wifi_util_error_print(WIFI_DMCLI,"%s:%d: Failed to allocate memory\n", __func__, __LINE__);
         free(str);
-        str = NULL;
-        return;
+        return false;
     }
     memset(data, 0, sizeof(webconfig_subdoc_data_t));
     memcpy((unsigned char *)&data->u.decoded.radios, (unsigned char *)&webconfig_dml.radios, get_num_radio_dml()*sizeof(rdk_wifi_radio_t));
@@ -615,8 +635,7 @@ void get_associated_devices_data(unsigned int radio_index)
         free(str);
         str = NULL;
         free(data);
-        data = NULL;
-        return;
+        return false;
     }
     pthread_mutex_lock(&webconfig_dml.assoc_dev_lock);
     for (itr=0; itr < (int)get_num_radio_dml(); itr++) {
@@ -645,7 +664,40 @@ void get_associated_devices_data(unsigned int radio_index)
     str = NULL;
     webconfig_data_free(data);
     free(data);
-    data = NULL;
+    return true;
+}
+
+void get_associated_devices_data(unsigned int radio_index)
+{
+    struct timespec now;
+    long long age_ms;
+    bool refreshed;
+
+    pthread_mutex_lock(&assoc_full_refresh_lock);
+    if (assoc_full_refresh_valid && clock_gettime(CLOCK_MONOTONIC, &now) == 0) {
+        age_ms = assoc_full_refresh_age_ms(&now);
+        if (age_ms >= 0 && age_ms < ASSOC_FULL_REFRESH_MIN_INTERVAL_MS) {
+            wifi_util_dbg_print(WIFI_DMCLI,
+                "%s:%d coalesced associated-clients snapshot radio:%u age_ms:%lld\n",
+                __func__, __LINE__, radio_index, age_ms);
+            pthread_mutex_unlock(&assoc_full_refresh_lock);
+            return;
+        }
+    }
+
+    wifi_util_dbg_print(WIFI_DMCLI, "%s:%d full associated-clients snapshot start radio:%u\n",
+        __func__, __LINE__, radio_index);
+    refreshed = get_associated_devices_data_refresh();
+    if (refreshed) {
+        if (clock_gettime(CLOCK_MONOTONIC, &assoc_full_refresh_last_success) == 0) {
+            assoc_full_refresh_valid = true;
+        } else {
+            assoc_full_refresh_valid = false;
+        }
+    }
+    wifi_util_dbg_print(WIFI_DMCLI, "%s:%d full associated-clients snapshot %s radio:%u\n",
+        __func__, __LINE__, refreshed ? "complete" : "failed", radio_index);
+    pthread_mutex_unlock(&assoc_full_refresh_lock);
 }
 
 /* Get APMLD index from mld_group pointer */
