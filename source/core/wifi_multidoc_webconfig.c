@@ -508,6 +508,18 @@ static int decode_security_blob(wifi_vap_info_t *vap_info, cJSON *security, pErr
         }
     }
 
+    wifi_util_info_print(WIFI_CTRL, "%s: WPA3DBG vap:%s mode:%d mfp:%d\n", __func__,
+        vap_info->vap_name, vap_info->u.bss_info.security.mode,
+        vap_info->u.bss_info.security.mfp);
+    /* Test branch: WPA3-Enterprise needs PMF, so override a blob-supplied Disabled/Optional. */
+    if (vap_info->u.bss_info.security.mode == wifi_security_mode_wpa3_enterprise &&
+        vap_info->u.bss_info.security.mfp != wifi_mfp_cfg_required) {
+        wifi_util_error_print(WIFI_CTRL,
+            "%s: WPA3DBG vap:%s blob MFPConfig:%d invalid for WPA3-Enterprise, forcing Required\n",
+            __func__, vap_info->vap_name, vap_info->u.bss_info.security.mfp);
+        vap_info->u.bss_info.security.mfp = wifi_mfp_cfg_required;
+    }
+
     if (isVapHotspot(vap_info->vap_index)) {
 
         radius_param = cJSON_GetObjectItem(security, "RadiusSettings");
